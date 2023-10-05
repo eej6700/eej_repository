@@ -1,2 +1,2 @@
 # eej_repository
-20000607 LEE EUIJU
+2019732035 이의주 LEE EUIJU
