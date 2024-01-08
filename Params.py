@@ -29,7 +29,9 @@ Copyright (c) 2023, Electric Power Research Institute
 """
 """
 Params.py
-
+DER-VET 프로젝트에서 사용되는 파라미터 관리 클래스인 Params를 정의함
+이 클래스는 JSON 또는 CSV 형식의 모델 파라미터 파일을 읽고 처리하여 DER-VET 모델에 필요한 파라미터 정보를 제공함
+다양한 메서드와 클래스 속성을 사용하여 파라미터를 초기화하고 검증하며 또한 민감도 분석 및 결합 설정을 처리함
 """
 import copy
 import itertools
@@ -57,19 +59,19 @@ class Params:
              components and their dictionary structure - TN
     """
     # set schema loction based on the location of this file
-    schema_location = Path(__file__).absolute().with_name('schema.json')
+    schema_location = Path(__file__).absolute().with_name('schema.json') # 스키마 파일의 경로를 저장하는 클래스 변수
 
     # initialize class variables
-    schema_dct = None
-    json_tree = None
-    xmlTree = None
-    filename = None
+    schema_dct = None # 스키마를 저장하는 클래스 변수
+    json_tree = None # JSON 및 XML 형식의 모델 파라미터 트리를 저장하는 클래스 변수
+    xmlTree = None 
+    filename = None # 현재 모델 파라미터 파일의 경로를 저장하는 클래스 변수
 
-    active_tag_key = None
-    sensitivity = None  # contains all sensitivity variables as keys and their values as lists
-    case_definitions = None  # Each row specifies the value of each attribute
+    active_tag_key = None # 활성화된 태그 및 키의 집합을 저장하는 클래스 변수
+    sensitivity = None  # 민감도 변수 및 값 목록을 저장하는 클래스 변수
+    case_definitions = None  # 민감도 분석을 위한 각 속성의 값을 지정하는 데이터프레임
 
-    instances = None
+    instances = None # 클래스의 인덕턴스를 저장하는 딕셔더리
     template = None
     referenced_data = None  # for a scenario in the sensitivity analysis
 
@@ -82,16 +84,8 @@ class Params:
 
     @classmethod
     def initialize(cls, filename, verbose):
-        """ This function 1) converts CSV into JSON; 2) read in the JSON; 3) convert indirect data
-        references into direct data; 4) create instances from Sensitivity Analysis and Coupling
-        values
-
-            Args:
-                filename (string): filename of JSON or CSV model parameter
-                verbose (bool): whether or not to print to console for more feedback
-
-            Returns dictionary of instances of Params, each key is a number
-        """
+        # 모델 파라미터를 초기화하고 필요한 데이터를 읽어와서 Params 클래스의 인스턴스를 반환하는 메서드
+        
         # 1) INITIALIZE CLASS VARIABLES
         cls.input_error_raised = False
         cls.timeseries_missing_error = False
@@ -179,7 +173,7 @@ class Params:
 
     @classmethod
     def copy_model_params_to_results(cls, csv_was_used):
-        # copy the model parameters file that the code uses (.json or .xml)
+        # 모델 파라미터 파일을 Results 폴더로 복사하는 메서드
         src = cls.filename
         if src.is_file():
             dst = cls.results_inputs['errors_log_path'] / f'model_parameters{src.suffix}'
@@ -195,14 +189,8 @@ class Params:
 
     @classmethod
     def csv_to_json(cls, csv_filepath):
-        """ converts a CSV with the correct set of columns into a json
-
-        Args:
-            csv_filepath:
-
-        Returns:
-
-        """
+        # CSV 파일을 JSON 파일로 변환하는 메서드 
+        
         # open csv to read into dataframe
         csv_data = pd.read_csv(csv_filepath)
         # convert pandas df into DER-VET readable data structure
@@ -216,14 +204,8 @@ class Params:
 
     @staticmethod
     def pandas_to_dict(model_parameter_pd):
-        """converts csv to a json--which DERVET can then read directly
-
-        Args:
-            model_parameter_pd:
-
-        Returns: dictionary that can be jumped as json in the data structure that DER-VET reads
-
-        """
+        # Pandas 데이터프레임을 DER-VET이 읽을 수 있는 JSON 데이터 구조로 변환하는 메서
+     
         # check if there was an ID column, if not then add one filled with '.'
         if 'ID' not in model_parameter_pd.columns:
             model_parameter_pd['ID'] = np.repeat('', len(model_parameter_pd))
@@ -283,9 +265,9 @@ class Params:
         return input_dct
 
     def __init__(self):
-        """ Initialize these following attributes of the empty Params class object.
-
-        """
+        # Params 클래스의 인스턴스를 초기화하고 각 속성을 읽고 검증하는 메서드
+        # 이 메서드에서 각 속성에 대한 read_and_validate 메서드를 호출하여 데이터를 읽고 검증함함
+      
         self.Scenario = self.read_and_validate('Scenario')
         self.Finance = self.read_and_validate('Finance')
 
@@ -314,22 +296,14 @@ class Params:
         self.Load = None
 
     @classmethod
+    """ read_and_valiidate method
+    name 매개변수 : 모델 파라미터의 루트 Tag 이름을 나타냄
+    해당 형식에 따라 read_and_validate_json 또는 read_and_validate_xml 메서드를 호출하여 데이터를 읽고 검증함
+    검증된 데이터는 각 속성에 대한 딕셔너리로 변환되며, 이 딕셔너리는 Params 클래스의 해당 속성 할당됨
+    """
     def read_and_validate(cls, name):
-        """ Read data from a file (usually after conversion from model parameter CSV) and
-        initializes senesitivity analysis. Makes note of which Key in what Tag has sensitivity
-        analysis by assigning a tuple of the key and property name as the index to the
-        sensitivity values given. This is stored in the attributes index of the sensitivity
-        dictionary, which is a nested dictionary whose first index is a string and second index
-        is a tuple
-
-        Args:
-            name (str): name of the root 'Tag'
-
-        Returns: A dictionary where keys are the ID value and the key is--
-            A dictionary filled with needed given values of the properties of each
-            service/technology if the service or technology is not implemented in this case,
-            then empty dictionary is returned.
-        """
+        # JSON 또는 XML 파일에서 데이터를 읽고 검증하는 메서드
+     
         if '.json' == cls.filename.suffix:
             return cls.read_and_validate_json(name)
         if '.xml' == cls.filename.suffix:
@@ -338,20 +312,8 @@ class Params:
 
     @classmethod
     def read_and_validate_xml(cls, name):
-        """ Read data from xml file (usually after conversion from model parameter CSV) and
-        initializes sensitivity analysis. Makes note of which Key in what Tag has sensitivity
-        analysis by assigning a tuple of the key and property name as the index to the
-        sensitivity values given. This is stored in the attributes index of the sensitivity
-        dictionary, which is a nested dictionary whose first index is a string and second index
-        is a tuple
-
-        Args:
-            name (str): name of the root 'Tag' in the xml file
-
-        Returns: A dictionary where keys are the ID value and the key is--  filled with needed
-        given values of the properties of each service/technology if the service or technology
-        is not implemented in this case, then empty dictionary is returned.
-        """
+        # XML 파일에서 데이터를 읽고 검증하는 메서드
+     
         schema_tag = cls.schema_dct.get("tags").get(name)
         if schema_tag is None:
             # ignore tags not in schema
@@ -429,20 +391,8 @@ class Params:
 
     @classmethod
     def read_and_validate_json(cls, name):
-        """ Read data from json file (usually after conversion from model parameter CSV) and
-        initializes sensitivity analysis. Makes note of which Key in what Tag has sensitivity
-        analysis by assigning a tuple of the key and property name as the index to the
-        sensitivity values given. This is stored in the attributes index of the sensitivity
-        dictionary, which is a nested dictionary whose first index is a string and second index
-        is a tuple
-
-        Args:
-            name (str): name of the root 'Tag' in the json file
-
-        Returns: A dictionary where keys are the ID value and the key is-- filled with needed
-        given values of the properties of each service/technology if the service or technology
-        is not implemented in this case, then empty dictionary is returned.
-        """
+        # JSON 파일에서 데이터를 읽고 검증하는 메서드
+     
         schema_tag = cls.schema_dct.get("tags").get(name)
         # Check if tag is in schema (SANITY CHECK)
         if schema_tag is None:
@@ -545,20 +495,9 @@ class Params:
 
     @staticmethod
     def convert_data_type(value, desired_type):
-        """ coverts data to a given type. takes in a value and a type
-
-            Args:
-                value (str): some data needed to be converted
-                desired_type (str): the desired type of the given value
-
-            Returns:
-                Attempts to convert the type of 'value' to 'desired_type'. Returns value if it can,
-                otherwise it returns a tuple (None, value) if desired_type is not a known type to
-                the function or the value cannot be converted to the desired type. report if
-                there was an error converting the given data in the convert_data_type method
-
-            Notes if None or NaN is given for the value of VALUE, then this function will error
-        """
+        # 데이터를 지정된 유형으로 변환하는 메서드
+        # value는 변환할 데이터, desired_type는 원하는 데이터 유형을 의미함
+        # 변환에 실패한 경우 (None, value) 튜플을 반환함함
 
         if desired_type == 'string':
             return value.lower()
