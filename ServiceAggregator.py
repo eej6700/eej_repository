@@ -39,14 +39,10 @@ class ServiceAggregator:
     """
 
     def __init__(self, value_stream_inputs_map, value_stream_class_map):
-        """
-        Create the corresponding service object and add it to the list of services.
-        Also generates a list of growth functions that apply to each service's timeseries data (to be used when adding growth data).
-
-        Args:
-            value_stream_inputs_map (Dict): dictionary of all active value streams in this format:
-                'value_stream_name': Value_Stream_object
-
+        """ 클래스의 초기화 함수
+        서비스 집합 및 관련 매개변수를 초기화함
+        value_stream_inputs_map: 활성화된 모든 서비스에 대한 입력 매핑 정보를 포함하는 딕셔너리
+        value_stream_class_map: 서비스 이름과 해당 서비스 클래스를 연결하는 딕셔너리
         """
 
         self.value_streams = {}
@@ -61,40 +57,26 @@ class ServiceAggregator:
         self.system_requirements_conflict = False
 
     def update_analysis_years(self, end_year, poi, frequency, opt_years, def_load_growth):
+        """ 분석 연도를 업데이트하고 특정 서비스에서 사용하는 함수
+        연도 간의 변화 및 시스템의 노출 검사
+        """
         if 'Deferral' in self.value_streams.keys():
             return self.value_streams['Deferral'].check_for_deferral_failure(end_year, poi, frequency, opt_years, def_load_growth)
         return opt_years
 
     def is_deferral_only(self):
-        """ if Deferral is on, and there is no energy market specified for energy settlement (or other market services)
-        then do not optimize (skip the optimization loop)
-
-        Returns: Bool that will skip the optimization loop and any cakcukations that depend on an
-        optimization solution
-
+        """ Deferral 서비스만 사용 중이면 최적화를 건너뛰도록 하는 함수
         """
         return 'Deferral' in self.value_streams and len(self.value_streams) == 1
 
     def initialize_optimization_variables(self, size):
-        """Function should be called at the beginning of each optimization loop. Initializes optimization variables
-
-        Args:
-            size (int): length of optimization variables_df to create
+        """ 최적화 변수를 초기화하는 함수
         """
         for value_stream in self.value_streams.values():
             value_stream.initialize_variables(size)
 
     def identify_system_requirements(self, der_lst, years_of_analysis, datetime_freq):
-        """ This function collects system requirements from the active value streams. This function only
-        needs to be called once if than index for each optimization year that the optimization needs to be
-        run for
-
-        Args:
-            der_lst (list): list of the initialized DERs in our scenario
-            years_of_analysis (list): list of years that should be included in the returned Index
-            datetime_freq (str): the pandas frequency in string representation -- required to create dateTime range
-
-        Returns: dict of min/max ch-dis-soe requirements set by system requirements
+        """ 시스템 요구 사항을 확인하고 시스템 제약 조건을 설정하는 함수수
         """
         for service in self.value_streams.values():
             service.calculate_system_requirements(der_lst)
@@ -133,13 +115,8 @@ class ServiceAggregator:
             return self.sys_requirements
 
     def report_conflict(self, conflict_mask, check_sys_req):
-        """ Checks to see if there was a conflict, if so then report it to the user and flag that the optimization
-        will not be able to solve (so to stop running)
-
-        Args:
-            conflict_mask (DataFrame): A boolean array that is true for indices corresponding to conflicts that occurs
-            check_sys_req (list): the sys reqs to check
-
+        """ 시스템 요구 사항에 충돌이 있는지 확인하고 충돌이 있을 경우 사용자에게 보고하며
+        최적화가 불가능하다고 플래그를 설정하여 실행을 중지하는 함수수
         """
         if np.any(conflict_mask):
             self.system_requirements_conflict = True
@@ -150,23 +127,7 @@ class ServiceAggregator:
                     TellUser.error(f"The following contribute to the {req} error: {self.sys_requirements.get(req).contributors(datetimes)}")
 
     def optimization_problem(self, mask, load_sum, tot_variable_gen, generator_out_sum, net_ess_power, combined_rating, annuity_scalar=1):
-        """ Generates the full objective function, including the optimization variables.
-
-        Args:
-            mask (DataFrame): A boolean array that is true for indices corresponding to time_series data included
-                    in the subs data set
-            tot_variable_gen (Expression): the sum of the variable/intermittent generation sources
-            load_sum (Expression): the sum of load within the system
-            generator_out_sum (Expression): the sum of conventional generation within the system
-            net_ess_power (Expression): the sum of the net power of all the ESS in the system. [= charge - discharge]
-            combined_rating (cvx.Expression, int): the combined rating of DER that can reliabily dispatched in a worst case situtation
-                these usually tend to be ESS and Generators
-            annuity_scalar (float): a scalar value to be multiplied by any yearly cost or benefit that helps capture the cost/benefit over
-                        the entire project lifetime (only to be set iff sizing)
-
-        Returns:
-            A dictionary with the portion of the objective function that it affects, labeled by the expression's key.
-            A list of optimization constraints.
+        """ 최적화 문제를 정의하고 목적 함수 및 제약 조건을 반환하는 함수
         """
         opt_functions = {}
         opt_constraints = []
@@ -176,24 +137,8 @@ class ServiceAggregator:
         return opt_functions, opt_constraints
 
     def aggregate_reservations(self, mask):
-        """Calculates:
-            - total amount of power (charging) that needs to be reserved for this value stream
-            - total amount of power (discharging) that needs to be reserved for this value stream
-            - total uE throughput
-            - worst case uE throughput
-
-        Args:
-            mask (DataFrame): A boolean array that is true for indices corresponding to time_series data included
-                    in the subs data set
-
-        Returns:
-            reservation to pull power down from the grid by discharging less
-            reservation to push power up into the grid by discharging more
-            reservation to pull power down from the grid by charging more
-            reservation to push power up into the grid by charging less
-            energy reservation stored/delivered bc of sub-time-step activities
-            worst case energy provided due to sub-time-step activities
-            worst case energy stored due to sub-time-step activities
+        """ 전체 전력 예약을 계산하는 함수
+        서비스별로 충전 및 방전 예약을 집계하는 함수수
         """
         charge_up = cvx.Parameter(value=np.zeros(sum(mask)), shape=sum(mask), name='ServiceAggZero')
         charge_down = cvx.Parameter(value=np.zeros(sum(mask)), shape=sum(mask), name='ServiceAggZero')
@@ -217,22 +162,14 @@ class ServiceAggregator:
         return discharge_down, discharge_up, charge_down, charge_up, uenergy_provided, uenergy_stored, worst_ue_provided, worst_ue_stored
 
     def save_optimization_results(self, subs_index):
-        """This function should be called after each optimization problem is solved. Saves the values at which the optimization functions
-        evaluate to the minimum.
-
-        Args:
-            subs_index (Index): index of the subset of data for which the variables_df were solved for
-
+        """ 최적화 결과를 저장하는 함수
+        각 서비스에 대한 최적화 결과를 저장함
         """
         for value_stream in self.value_streams.values():
             value_stream.save_variable_results(subs_index)
 
     def merge_reports(self):
-        """ Collects and merges the optimization results for all Value Streams into a DataFrame
-
-        Returns: A timeseries dataframe with user-friendly column headers that summarize the results
-            pertaining to this instance
-
+        """ 모든 서비스의 최적화 결과를 수집하고 병합하여 사용자 친화적인 형태로 반환하는 함수
         """
         results = pd.DataFrame()
         monthly_data = pd.DataFrame()
@@ -245,14 +182,8 @@ class ServiceAggregator:
         return results, monthly_data
 
     def drill_down_dfs(self, **kwargs):
-        """
-
-        Args:
-            kwargs (): dictionary of dataframes that were created by COLLECT_RESULTS
-
-        Returns: dictionary of DataFrames of any reports that are value stream specific
-            keys are the file name that the df will be saved with
-
+        """ 결과를 자세히 분석하기 위한 데이터프레임을 반환하는 함수
+        각 서비스에 대한 드릴다운 보고서를 생성함
         """
         df_dict = dict()
         for der in self.value_streams.values():
