@@ -29,7 +29,7 @@ Copyright (c) 2023, Electric Power Research Institute
 """
 """
 Result.py
-
+# 최적화 결과를 수집하고 저장하며, 후속 계산 및 CSV 파일로 저장하는 클래스
 """
 import pandas as pd
 from storagevet.ErrorHandling import *
@@ -48,16 +48,9 @@ class Result:
 
     @classmethod
     def initialize(cls, results_params, case_definitions):
-        """ Initialized the class with inputs that persist across all instances.
-
-        If there are multiple runs, then set up comparison of each run.
-
-        Args:
-            results_params (Dict): user-defined inputs from the model parameter inputs
-            case_definitions (DataFrame): this is a dataframe of possible sensitivity analysis instances
-
-        Returns:
-
+        """ 클래스의 속성을 초기화하고 여러 최적화 실행을 비교할 수 있도록 결과 인스턴스를 생성하는 함수
+        results_params : 모델 파라미터 입력에서 사용자가 정의한 값들을 담은 딕셔너리
+        case_definitions : 감도 분석 인스턴스를 담은 데이터프레임임
         """
         cls.instances = {}
         cls.dir_abs_path = Path(results_params['dir_absolute_path'])
@@ -77,13 +70,9 @@ class Result:
 
     @classmethod
     def add_instance(cls, key, scenario):
-        """
-
-        Args:
-            key (int): the key that corresponds to the value this instance corresponds to within the df_analysis
-                dataFrame from the Params class.
-            scenario (Scenario.Scenario): scenario object after optimization has run to completion
-
+        """ 결과 인스턴스를 생성하고 딕셔너리에 추가하는 함수
+        key: 결과 인스턴스가 나타내는 Params 클래스의 인스턴스 값에 대응하는 키
+        scenario : 최적화가 완료된 후의 시나리오 객체체
         """
         # initialize an instance of Results
         template = cls(scenario)
@@ -97,10 +86,8 @@ class Result:
         template.save_as_csv(key, cls.sensitivity)
 
     def __init__(self, scenario):
-        """ Initialize a Result object, given a Scenario object with the following attributes.
-
-            Args:
-                scenario (Scenario.Scenario): scenario object after optimization has run to completion
+        """ Result 객체를 초기화하는 함수
+        scenario : 최적화가 완료된 후의 시나리오 객체를 받아 초기화함함
         """
         self.frequency = scenario.frequency
         self.dt = scenario.dt
@@ -129,11 +116,7 @@ class Result:
         self.drill_down_dict = dict()
 
     def collect_results(self):
-        """ Collects any optimization variable solutions or user inputs that will be used for drill down
-        plots, as well as reported to the user. No matter what value stream or DER is being evaluated, these
-        dataFrames should always be made and reported to the user
-
-        Three attributes are edited in this method: TIME_SERIES_DATA, MONTHLY_DATA, TECHNOLOGY_SUMMARY
+        """ 최적화 변수 솔루션이나 사용자 입력을 수집하여 드릴다운 플롯 및 사용자에게 보고할 데이터프레임을 생성하는 함수
         """
 
         TellUser.debug("Performing Post Optimization Analysis...")
@@ -154,12 +137,7 @@ class Result:
         self.technology_summary = self.poi.technology_summary()
 
     def create_drill_down_dfs(self):
-        """ Tells ServiceAggregator and POI to build drill down reports. These are reports
-        that are service or technology specific.
-
-        Returns: Dictionary of DataFrames of any reports that are value stream specific
-            keys are the file name that the df will be saved with
-
+        """ ServiceAggregator 및 POI에 드릴다운 보고서 생성을 지시하는 함수
         """
         if self.opt_engine:
             self.drill_down_dict.update(self.poi.drill_down_dfs(monthly_data=self.monthly_data, time_series_data=self.time_series_data,
@@ -169,22 +147,12 @@ class Result:
         TellUser.info("Finished post optimization analysis")
 
     def calculate_cba(self):
-        """ Calls all finacial methods that will result in a series of dataframes to describe the cost benefit analysis for the
-        case in question.
-
+        """ 비용 대 이익 분석을 수행하는 함수수
         """
         self.cost_benefit_analysis.calculate(self.poi.der_list, self.service_agg.value_streams, self.time_series_data, self.opt_years)
 
     def save_as_csv(self, instance_key, sensitivity=False):
-        """ Save useful DataFrames to disk in csv files in the user specified path for analysis.
-
-        Args:
-            instance_key (int): string of the instance value that corresponds to the Params instance that was used for
-                this simulation.
-            sensitivity (boolean): logic if sensitivity analysis is active. If yes, save_path should create additional
-                subdirectory
-
-        Prints where the results have been saved when completed.
+        """ 중요한 데이터프레임을 디스크에 CSV 파일로 저장하는 함수
         """
         if sensitivity:
             savepath = self.dir_abs_path / str(instance_key)
@@ -218,10 +186,7 @@ class Result:
 
     @classmethod
     def sensitivity_summary(cls):
-        """ Loop through all the Result instances to build the dataframe capturing the important financial results
-        and unique sensitivity input parameters for all instances.
-            Then save the dataframe to a csv file.
-
+        """ 모든 결과 인스턴스를 반복하면서 감도 분석 결과를 요약한 데이터프레임을 생성하고 CSV 파일로 저장하는 함수
         """
         if cls.sensitivity:
             for key, results_object in cls.instances.items():
@@ -238,7 +203,6 @@ class Result:
 
     @classmethod
     def proforma_df(cls, instance=0):
-        """ Return the financial pro_forma for a specific instance
-
+        """ 특정 인스턴스에 대한 재무 프로포마를 반환하는 함수
         """
         return cls.instances[instance].cost_benefit_analysis.pro_forma
