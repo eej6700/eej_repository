@@ -30,15 +30,23 @@ Copyright (c) 2023, Electric Power Research Institute
 """
 runStorageVET.py
 
-This Python script serves as the initial launch point executing the Python-based version of StorageVET
-(AKA StorageVET 2.0 or SVETpy).
+StorageVET를 실행하는 초기 실행 지점으로 사용되며
+StoregeVET 2.0 또는 SVETpy의 Python 기반 버전을 실행함함
 """
 
-from storagevet.Scenario import Scenario
+from storagevet.Scenario import Scenario 
+                                # 시나리오 처리하는 클래스
+                                # POI 및 서비스 집계기
 from storagevet.Params import Params
+                              # 모델 매개변수를 초기화하는 클래스
+                              # 모델 매개변수 CSV 또는 XML 파일에서 사례를 설명하는 Params 객체 초기화함
 from storagevet.Result import Result
+                              # 결과 처리하는 클래스
+                              # 각 시나리오의 실행 결과를 저장하고 분석하는 데 사용함
 import time
 from storagevet.Visualization import Visualization
+                                     # 시각화 처리하는 클래스
+                                     # verbose 모드에서 시각화 요약을 출력함
 from storagevet.ErrorHandling import *
 
 
@@ -49,12 +57,8 @@ class StorageVET:
     """
 
     def __init__(self, model_parameters_path, verbose=False):
-        """ Constructor to initialize the parameters and data needed to run StorageVET.
-        Initialize the Params Object from Model Parameters
-
-            Args:
-                model_parameters_path (str): Filename of the model parameters CSV or XML that
-                    describes the case to be analysed
+        """ StorageVET을 실행하기 위한 매개변수 및 데이터를 초기화하는 함수
+        model_parameters_path는 모델 매개변수 CSV 또는 XML 파일의 경로임
         """
         self.verbose = verbose
         # Initialize the Params Object from Model Parameters
@@ -65,10 +69,9 @@ class StorageVET:
             self.visualization.class_summary()
 
     def solve(self):
-        """ Run storageVET
-
-        Returns: the Results class
-
+        """ StorageVET을 실행하고 결과 반환하는 함수
+        각 시나리오에 대해 Scenario를 초기화하고 최적화 문제를 해결한 후 결과를 Result에 추가함
+        최종적으로 결과를 반환하고 실행 시간을 출력함
         """
         starts = time.time()
         for key, value in self.case_dict.items():
