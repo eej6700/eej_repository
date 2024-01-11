@@ -133,11 +133,8 @@ class Scenario(object):
     }
 
     def __init__(self, input_tree):
-        """ Initialize a scenario.
-
-        Args:
-            input_tree (Params.Params): Params of input attributes such as time_series, params, and monthly_data
-
+        """ 시나리오 객체를 초기화하는 함수
+        사용자 입력 파라미터 및 초기화된 속성을 설정함함
         """
         self.verbose = input_tree.Scenario['verbose']
         self.start_time = time.time()
@@ -197,8 +194,7 @@ class Scenario(object):
         self.opt_engine = True  # indicates that dervet should go to the optimization module and size there
 
     def set_up_poi_and_service_aggregator(self, point_of_interconnection_class=POI, service_aggregator_class=ServiceAggregator):
-        """ Initialize the POI and service aggregator with DERs and valuestreams to be evaluated.
-
+        """ POI(접속 지점)와 서비스 어그리게이터를 초기화하는 함수
         """
         # these need to be initialized after opt_agg is created
         self.poi = point_of_interconnection_class(self.poi_inputs, self.technology_inputs_map, self.TECH_CLASS_MAP)
@@ -208,7 +204,7 @@ class Scenario(object):
             self.opt_engine = False
 
     def initialize_cba(self):
-        """ Initialize StorageVET's limited cost benefit analysis module with user given inputs
+        """ StorageVET의 제한된 비용-편익 분석 모듈을 초기화하는 함수
         """
         self.cost_benefit_analysis = Fin.Financial(self.finance_inputs, self.start_year, self.end_year)
         # add fuel_cost to active DERs that can consume fuel
@@ -216,11 +212,7 @@ class Scenario(object):
             der.set_fuel_cost(self.cost_benefit_analysis.get_fuel_cost)
 
     def fill_and_drop_extra_data(self):
-        """ Go through value streams and technologies and keep data for analysis years, and add more
-        data if necessary.  ALSO creates/assigns optimization levels.
-
-        Returns: None
-
+        """ 값 스트림 및 기술 요소에서 분석 연도에 필요한 데이터를 유지하고 추가 데이터를 필요에 따라 추가하는 함수수
         """
         self.opt_years = self.service_agg.update_analysis_years(self.end_year, self.poi, self.frequency, self.opt_years, self.def_growth)
 
@@ -249,21 +241,7 @@ class Scenario(object):
 
     @staticmethod
     def assign_optimization_level(analysis_years, control_horizon, predictive_horizon, frequency, dt):
-        """ creates an index based on the opt_years presented and then
-
-         Args:
-            analysis_years (list): List of Period years where we need data for
-            control_horizon (str, int): optimization window length from the user
-            predictive_horizon (str, int): mcp horizon input from the user
-                (if 0, then assume the same as CONTROL_HORIZON)
-                should be greater than or equal to CONTROL_HORIZON value
-            frequency (str): time step in string form
-            dt (float): time step
-
-        Return:
-            opt_agg (DataFrame): 1 column, all indexes with the same value will be in one
-            optimization problem together
-
+        """ 최적화 수준을 할당하는 함수수
         """
         # create dataframe to fill
         level_index = Lib.create_timeseries_index(analysis_years, frequency)
@@ -330,8 +308,7 @@ class Scenario(object):
         return level_df
 
     def optimize_problem_loop(self):
-        """ This function selects on opt_agg of data in time_series and calls optimization_problem on it.
-
+        """ 최적화 루프를 시작하여 다양한 최적화 윈도우에 대한 최적화 문제를 해결하는 함수수
         """
         if not self.opt_engine:
             return
@@ -353,20 +330,7 @@ class Scenario(object):
             self.save_optimization_results(opt_period, sub_index, cvx_problem, obj_expressions, cvx_error_msg)
 
     def set_up_optimization(self, opt_window_num, annuity_scalar=1, ignore_der_costs=False):
-        """ Sets up and runs optimization on a subset of time in a year. Called within a loop.
-
-        Args:
-            opt_window_num (int): the optimization window number that is being solved
-            annuity_scalar (float): a scalar value to be multiplied by any yearly cost or benefit that helps capture the cost/benefit over
-                        the entire project lifetime (only to be set iff sizing OR optimizing carrying costs)
-            ignore_der_costs (bool): flag to indicate if we do not want to consider to economics of operating the DERs in our optimization
-                (this flag will never be TRUE if the user indicated the desire to size the DER mix)
-
-        Returns:
-            functions (dict): functions or objectives of the optimization
-            constraints (list): constraints that define behaviors, constrain variables, etc. that the optimization must meet
-            sub_index (pd.Index): index of the optimization window represented in our optimization
-
+        """ 최적화를 위한 변수를 설정하고 최적화를 실행하는 함수수
         """
         # used to select rows from time_series relevant to this optimization window
         mask = self.optimization_levels.predictive == opt_window_num
@@ -481,15 +445,7 @@ class Scenario(object):
         return funcs, consts, sub_index
 
     def solve_optimization(self, obj_expression, obj_const, force_glpk_mi=False):
-        """ Sets up and runs optimization on a subset of time in a year. Called within a loop.
-
-        Args:
-            obj_expression (dict): functions or objectives of the optimization
-            obj_const (list): constraints that define behaviors, constrain variables, etc. that the optimization must meet
-
-        Returns:
-            objective_values (DataFrame): the minimum values for each cost function subject to constraints
-
+        """ 최적화 문제를 설정하고 해결하는 함수
         """
         # summary of objective expressions to set up optimization problem
         obj = cvx.Minimize(sum(obj_expression.values()))
@@ -527,16 +483,7 @@ class Scenario(object):
         return prob, obj_expression, cvx_error_msg
 
     def save_optimization_results(self, opt_window_num, sub_index, prob, obj_expression, cvx_error_msg):
-        """ Checks if there was a solution to the optimization. If not, report the problem
-         to the user. If there was a solution, then saves results within each instance.
-
-        Args:
-            opt_window_num:
-            sub_index:
-            prob:
-            obj_expression:
-            cvx_error_msg: any error message that might have occurred during problem solve
-
+        """ 최적화 결과를 저장하고 문제의 해결 상태를 확인하는 함
         """
         TellUser.info(f'Optimization problem was {prob.status}')
         # save solver used
