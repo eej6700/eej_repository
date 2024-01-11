@@ -1,37 +1,3 @@
-"""
-Copyright (c) 2023, Electric Power Research Institute
-
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without modification,
- are permitted provided that the following conditions are met:
-
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright notice,
-       this list of conditions and the following disclaimer in the documentation
-       and/or other materials provided with the distribution.
-     * Neither the name of DER-VET nor the names of its contributors
-       may be used to endorse or promote products derived from this software
-       without specific prior written permission.
-
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-"""
-"""
-Library.py
-
-Library of helper functions used in StorageVET.
-"""
 import numpy as np
 import pandas as pd
 
@@ -39,15 +5,10 @@ BOUND_NAMES = ['ch_max', 'ch_min', 'dis_max', 'dis_min', 'ene_max', 'ene_min']
 
 
 def update_df(df1, df2):
-    """ Helper function: Updates elements of df1 based on df2. Will add new columns if not in df1 or insert elements at
-    the corresponding index if existing column
-
-    Args:
-        df1 (Data Frame): original data frame to be editted
-        df2 (Data Frame): data frame to be added
-
-    Returns:
-        df1 (Data Frame)
+    """ df1을 df2를 기반으로 업데이트하는 함수
+    새로운 열이 df1에 없으면 추가하거나 기존 열에 해당하는 인덱스에 요소를 삽입함
+    여기서 df1은 편집할 원래 데이터프레임, df2는 추가할 데이터 프레임을 의미하며
+    업데이트된 데이터프레임인 df1을 반환하게 됨
     """
 
     old_col = set(df2.columns).intersection(set(df1.columns))
@@ -57,18 +18,9 @@ def update_df(df1, df2):
 
 
 def disagg_col(df, group, col):
-    """ Helper function: Adds a disaggregated column of 'col' based on the count of group
-    TEMP FUNCTION: assumes that column is merged into disagg dataframe at original resolution = Bad approach
-
-    Args:
-        df (Data Frame): original data frame to be
-        group (list): columns to group on
-        col (string): column to disagg
-
-    Returns:
-        df (Data Frame)
-
-
+    """ group의 카운트를 기반으로 col의 비계층화된 열을 추가함
+    여기서 group은 리스트로 그룹화할 열, col은 문자열로 비계층화할 열을 의미하며
+    비계층화된 열이 추가되어 업데이트된 데이터프레임인 df를 반환함
     """
     count_df = df.groupby(by=group).size()
     count_df.name = 'counts'
@@ -78,17 +30,11 @@ def disagg_col(df, group, col):
 
 
 def apply_growth(source, rate, source_year, yr, freq):
-    """ Applies linear growth rate to determine data for future year
-
-    Args:
-        source (Series): given data
-        rate (float): yearly growth rate (%)
-        source_year (Period): given data year
-        yr (Period): future year to get data for
-        freq (str): simulation time step frequency
-
-    Returns:
-        new (Series)
+    """ 선형 성장률을 적용하여 미래 연도의 데이터를 결정하는 함수
+    여기서 source는 시리즈로 주어진 데이터, rate는 부동소수점으로 연간 성장률(%),
+    source_year는 기간으로 주어진 데이터 연도, yr는 기간으로 데이터를 가져올 미래 연도,
+    freq는 문자열로 시뮬레이션 타임 스텝 주기를 의미함
+    미래 연도의 데이터가 포함된 새로운 시리즈를 반환함
     """
     years = yr.year - source_year.year  # difference in years between source and desired yea
     new = source*(1+rate)**years  # apply growth rate to source data
@@ -114,14 +60,10 @@ def apply_growth(source, rate, source_year, yr, freq):
 
 
 def create_timeseries_index(years, frequency):
-    """ Creates the template for the timeseries index internal to the program that is Hour Begining
-
-    Args:
-        years (list): list of years that should be included in the returned Index
-        frequency (str): the pandas frequency in string representation -- required to create dateTime range
-
-    Returns: an empty DataFrame with the index beginning at hour 0
-
+    """ 시간 색인의 템플릿을 만들며 내부 프로그램에서 시간 단위 시작을 나타내는 함수
+    years는 리스트로 포함된 연도 목록을, frequency는 문자열로 판다스 주기의 문자열을 표현하며
+    날짜 범위를 만드는 데 필요함
+    시간 색인이 0시에서 시작하는 빈 데이터프레임을 반환함
     """
     temp_master_df = pd.DataFrame()
     years = np.sort(years)
@@ -136,16 +78,10 @@ def create_timeseries_index(years, frequency):
 
 
 def fill_extra_data(df, years_need_data_for, growth_rate, frequency):
-    """ Extends timeseries data with missing years of data estimated with given GROWTH_RATE
-
-    Args:
-        df (DataFrame): DataFrame for which to apply the following
-        years_need_data_for (list): years that need to be in the index of the DF
-        growth_rate (float, int): the rate at which the data growths as time goes on
-        frequency (str): the pandas frequency in string representation -- required to create dateTime range
-
-    Returns:
-
+    """ 주어진 성장률로 추정된 누락된 연도의 데이터로 시계열 데이터를 확장하는 함수
+    df는 다음에 적용할 데이터프레임, years_need_data_for는 데이터프레임의 색인에 포함되어야 하는 연도,
+    growth_rate는 시간이 지남에 따라 데이터가 성장하는 속도, frequency는 판다스 주기의 문자열을 표현함
+    업데이트된 데이터프레임인 df를 반환함함
     """
     data_year = df.iloc[1:].index.year.unique()  # grab all but the first index
     # which years do we not have data for
@@ -172,14 +108,8 @@ def fill_extra_data(df, years_need_data_for, growth_rate, frequency):
 
 
 def drop_extra_data(df, years_need_data_for):
-    """ Remove any data that is not specified by YEARS_NEED_DATA_FOR
-
-    Args:
-        df:
-        years_need_data_for:
-
-    Returns:
-
+    """ years_need_data_for에 지정되지 않은 데이터를 제거하는 함수
+    지정된 연도의 데이터만 포함된 데이터프레임을 반환함
     """
     data_year = df.index.year.unique()  # which years was data given for
     # which years is data given for that is not needed
@@ -192,25 +122,15 @@ def drop_extra_data(df, years_need_data_for):
 
 
 def is_leap_yr(year):
-    """ Determines whether given year is leap year or not.
-
-    Args:
-        year (int): The year in question.
-
-    Returns:
-        bool: True for it being a leap year, False if not leap year.
+    """ 주어진 연도가 윤년인지 여부를 결정하는 함수
+    윤년이면 True, 아니면 False를 반환함
     """
     return year % 4 == 0 and year % 100 != 0 or year % 400 == 0
 
 
 def truncate_float(number, decimals=3):
-    """
-
-    Args:
-        number: float with lots of decimal values
-        decimals: number of decimals to keep
-
-    Returns: a truncated version of the NUMBER
-
+    """ 부동소수점을 지정된 소수점 자릿수로 절사하는 함수
+    nimber는 많은 소수 자릿수를 갖는 부동소수점, decimals는 유지할 소수점 자릿수를 의미함
+    입력 숫자의 절사된 버전을 반환함
     """
     return round(number * 10**decimals) / 10**decimals
