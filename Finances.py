@@ -1,38 +1,3 @@
-"""
-Copyright (c) 2023, Electric Power Research Institute
-
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without modification,
- are permitted provided that the following conditions are met:
-
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright notice,
-       this list of conditions and the following disclaimer in the documentation
-       and/or other materials provided with the distribution.
-     * Neither the name of DER-VET nor the names of its contributors
-       may be used to endorse or promote products derived from this software
-       without specific prior written permission.
-
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-"""
-"""
-Finances.py
-
-This Python class contains methods and attributes vital for completing financial analysis given optimal dispathc.
-"""
-
 import pandas as pd
 import numpy as np
 import numpy_financial as npf
@@ -46,10 +11,8 @@ SATURDAY = 5
 class Financial:
 
     def __init__(self, params, start_year, end_year):
-        """ Initialized Financial object for case
-
-         Args:
-            params (Dict): input parameters
+        """ 초기화 함수로, Financial 클래스의 인스턴스를 생성할 때 호출되는 함수,
+        인스턴스 변수들을 초기화하고 필요한 데이터를 받아옴
         """
 
         # assign important financial attributes
@@ -87,20 +50,8 @@ class Financial:
         self.monthly_bill = pd.DataFrame()
 
     def calculate(self, technologies, value_streams, results, opt_years):
-        """ this function calculates the proforma, cost-benefit, npv, and payback using the optimization variable results
-        saved in results and the set of technology and service instances that have (if any) values that the user indicated
-        they wanted to use when evaluating the CBA.
-
-        Instead of using the technologies and services as they are passed in from the call in the Results class, we will pass
-        the technologies and services with the values the user denoted to be used for evaluating the CBA.
-
-        Args:
-            technologies (list): Dict of technologies (needed to get capital and om costs)
-            value_streams (Dict): Dict of all services to calculate cost avoided or profit
-            results (DataFrame): DataFrame of all the concatenated timseries_report() method results from each DER
-                and ValueStream
-            opt_years (list)
-
+        """ proforma, cost-benefit, npv 및 payback을 계산하는 함수
+        최적화 변수 결과와 기타 필요한 데이터를 인자로 받아 계산
         """
         if self.customer_sided:
             original_load = results.get('Total Original Load (kW)', results.get('Total Load (kW)'))
@@ -117,18 +68,8 @@ class Financial:
         self.pro_forma = proforma
 
     def customer_bill(self, tariff, base_load, net_load, valuestreams):
-        """ Calculates the demand and energy charges based on the provided tariff.
-
-        Args:
-            tariff (pd.DataFrame): The full tariff provided, with energy and demand
-            base_load (pd.DataFrame): The original load BTM, without any DERs connected on the customer's side
-            net_load (pd.DataFrame):  The net load that the meter sees as a result of adding DERs behind the meter
-            valuestreams (dict)
-
-        Returns: 2 forms of the bill-- 1) a monthly index dataframe with a column for demand
-            charges and a column for energy charges; 2) a billing period indexed dataframe with
-            a column for demand charges and a column for energy charges
-
+        """ 요금 청구를 계산하는 함수
+        전력 수요 및 사용자 측 DER에 따른 월별 및 청구 기간별 요금을 계산함함
         """
         # 1) GROW TARIFF
         # collect growth rates to apply to charges
@@ -225,19 +166,8 @@ class Financial:
 
     @staticmethod
     def create_bill_period_mask(tariff_row, month, he_minute, weekday, year=None):
-        """ Given a row and information about the index of that data frame, create a pd.Series of
-        booleans that indicate where the billing period (described by the TARIFF_ROW) applies
-
-        Args:
-            tariff_row:
-            month:
-            he_minute:
-            weekday:
-            year (pd.Series): option input, tariff_row should have a "Year" columns that the
-            tariff applies to
-
-        Returns: pd.Series of booleans
-
+        """ 청구 기간에 대한 마스크를 생성하는 함수
+        주어진 조건에 따라 타임 시리즈 데이터프레임을 반환함
         """
         if tariff_row.ndim != 1:
             TellUser.error('Billing Periods must be unique, '
@@ -258,15 +188,8 @@ class Financial:
 
     @staticmethod
     def calc_retail_energy_price(tariff, freq, analysis_yr, non_zero=True):
-        """ transforms tariff data file into time series dataFrame
-
-        Args:
-            tariff (DataFrame): raw tariff dataframe.
-            freq (str): the frequency of the timeseries data we are working with
-            analysis_yr (float): Year for which to build the tariff for
-
-        Returns: a DataFrame with the index beginning at hour 0
-
+        """ 전력 가격을 계산하는 함수
+        주어진 조건에 따라 타임 시리즈 데이터프레임을 반환함함
         """
         temp = pd.DataFrame(index=Lib.create_timeseries_index([analysis_yr], freq))
         size = len(temp)
@@ -307,14 +230,8 @@ class Financial:
         return temp
 
     def get_fuel_cost(self, fuel_type):
-        """ This function looks up and returns the fuel_price from
-                Financial attributes, based on a fuel_type
-        Args:
-            fuel_type (String): it must also have an associated price attribute
-                     valid types: liquid, gas, other
-        Returns:
-            a fuel_cost (Float)
-                units are $/MMBtu
+        """ 연료 비용을 반환하는 함수
+        연료 유형에 따른 연료 비용을 가져옴
         """
         fuel_cost = {
             'liquid': self.fuel_price_liquid,
@@ -324,16 +241,8 @@ class Financial:
         return fuel_cost[fuel_type]
 
     def proforma_report(self, technologies, valuestreams, results, opt_years):
-        """ Calculates and returns the proforma
-
-        Args:
-            technologies (list): list of technologies (needed to get capital and om costs)
-            valuestreams (Dict): Dict of all services to calculate cost avoided or profit
-            results (DataFrame): DataFrame of all the concatenated timseries_report() method
-                results from each DER and ValueStream
-            opt_years (list)
-
-        Returns: dataframe proforma
+        """ 프로포르마를 계산하는 함수
+        기술 및 가치 스트림의 결과를 기반으로 프로포르르마를 반환함
         """
         pro_forma = pd.DataFrame(index=pd.period_range(self.start_year, self.end_year, freq='y'))
         # add VS proforma report
@@ -389,14 +298,8 @@ class Financial:
         return pro_forma
 
     def calculate_yearly_avoided_cost(self, charge_type, growth_rate):
-        """Calculated the yearly avoided cost in the monthly bill, given the original cost and
-        the new cost column names in the monthly bill
-
-        Args:
-            charge_type (string): 'Demand' or 'Energy'
-            growth_rate (float): the rate at which the prices will grow (user defined)
-
-        Returns: a df that can be concatinated with the profroma
+        """ 연료 및 에너지 요금에서 연간 회피 비용을 계산하는 함수
+        연료 및 에너지 요금의 성장률에 따라 연간 회피 비용을 반환함
         """
         avoided_cost_df = pd.DataFrame()
         # splice labels with CHARGE_TYPE string
@@ -412,15 +315,8 @@ class Financial:
         return avoided_cost_df
 
     def apply_rate(self, df, escalation_rate, base_year):
-        """
-
-        Args:
-            df (pd.Dataframe): profroma type df
-            escalation_rate (float):
-            base_year (int)
-
-        Returns: a df where the escalation_rate is applied and t=0 is the base year
-
+        """ 비용 또는 수익을 에스컬레이션 비율에 따라 조정하는 함수
+        에스컬레이션 비율과 기준 연도를 바탕으로 조정된 데이터프레임을 반환함함
         """
         # if escalation_rate is not given, use user given inflation rate
         if escalation_rate is None:
@@ -434,19 +330,8 @@ class Financial:
         return df
 
     def fill_non_optimization_years(self, df, escalation_rate, is_om_cost = False):
-        """
-
-        Args:
-           df (pd.Dataframe): profroma type df with only years in the index, and those year correspond
-            to analysis years
-           escalation_rate (float):
-           is_om_cost (boolean): False by default
-               when is_om_cost is True, the value occurring at
-               the minimum opt year will not be changed
-
-        Returns: a df where the data is filled by escalating values before and after the
-            optimization years
-
+        """ 최적화 연도 이전 및 이후의 연도를 에스컬레이션 비율에 따라 채우는 함수
+        에스컬레이션 비율 및 O&M 비용 여부에 따라 조정된 데이터프레임을 반환함함
         """
         # if escalation_rate is not given, use user given inflation rate
         if escalation_rate is None:
@@ -487,11 +372,8 @@ class Financial:
         return filled_df
 
     def cost_benefit_report(self, pro_forma):
-        """ Calculates and returns a cost-benefit data frame
-
-        Args:
-            pro_forma (DataFrame): Pro-forma DataFrame that was created from each ValueStream or DER active
-
+        """ 비용-편익을 계산하는 함수
+        프로포르마를 기반으로 비용-편익 데이터프레임을 반환함함
         """
         # remove 'Yearly Net Value' from dataframe before preforming the rest (we dont want to include net values, so we do this first)
         pro_forma = pro_forma.drop('Yearly Net Value', axis=1)
@@ -519,11 +401,8 @@ class Financial:
         self.cost_benefit = self.cost_benefit.T
 
     def net_present_value_report(self, pro_forma):
-        """ Uses the discount rate to calculate the present value for each column within the proforma
-
-        Args:
-            pro_forma (DataFrame): Pro-forma DataFrame that was created from each ValueStream or DER active
-
+        """ 순 현재 가치를 계산하는 함수
+        프로포르마를 기반으로 순 현재 가치 데이터프레임을 반환함
         """
         # use discount rate to calculate NPV for net
         npv_dict = {}
@@ -536,15 +415,8 @@ class Financial:
         self.npv = pd.DataFrame(npv_dict, index=pd.Index(['NPV']))
 
     def payback_report(self, technologies, proforma, opt_years):
-        """ calculates and saves the payback period and discounted payback period in a dataframe
-
-        Args:
-            technologies
-            proforma (pd.DataFrame): Pro-forma DataFrame that was created from each ValueStream or DER active
-            opt_years (list):
-
-        Returns:
-
+        """ 페이백 및 할인 페이백 기간을 계산하는 함수
+        연료 및 에너지 요금의 성장률과 최적화 연도에 따라 페이백 기간을 반환함
         """
         self.payback = pd.DataFrame({'Payback Period': self.payback_period(technologies, proforma, opt_years),
                                      'Discounted Payback Period': self.discounted_payback_period(technologies, proforma, opt_years)},
@@ -552,21 +424,8 @@ class Financial:
 
     @staticmethod
     def payback_period(techologies, proforma, opt_years):
-        """The payback period is the number of years it takes the project to break even. In other words, if you
-        ended the analysis at year x, the sum of all costs and benefits up to that point would be zero.
-
-        These outputs are independent from the analysis horizon.
-
-        Args:
-            proforma (pd.DataFrame): Pro-forma DataFrame that was created from each ValueStream or DER active
-            techologies
-            opt_years (list)
-
-        Returns: capex/yearlynetbenefit where capex is the year 0 capital costs and yearlynetbenefit is the (benefits - costs) in the first opt_year
-
-        Notes:
-            In the case of multiple opt_years, do not report a payback period for now.
-
+        """ 페이백 기간을 계산하는 함수
+        연료 및 에너지 요금의 성장률과 최적화 연도에 따라 페이백 기간을 반환함
         """
         capex = 0
         for tech in techologies:
@@ -582,25 +441,8 @@ class Financial:
         return capex/yearlynetbenefit
 
     def discounted_payback_period(self, technologies, proforma, opt_years):
-        """ This is the number of years it takes for the NPV of the project to be zero. This number should be higher than the payback period
-        when the discount rate is > 0. This number should be the same as the payback period if the discount rate is zero.
-
-        The exact discounted payback period can be calculated with the following formula: log(1/(1-(capex*dr/yearlynetbenefit)))/log(1+dr) where
-        capex is the year 0 capital costs, yearlynetbenefit is the (benefits - costs) in the first opt_year converted into year 0 dollars,
-        dr is the discount rate [0,1], and the log function is base e.
-
-        These outputs are independent from the analysis horizon.
-
-        Args:
-            technologies (list):
-            proforma (DataFrame):
-            opt_years (list):
-
-        Returns:
-
-        Notes:
-            In the case of multiple opt_years, do not report a payback period for now.
-
+        """ 할인 페이백 기간을 계산하는 함수
+        연료 및 에너지 요금의 성장률과 최적화 연도에 따라 할인 페이백 기간을 반환함
         """
         payback_period = self.payback_period(technologies, proforma, opt_years)  # This is simply (capex/yearlynetbenefit)
         dr = self.npv_discount_rate
@@ -612,11 +454,7 @@ class Financial:
         return discounted_pp
 
     def report_dictionary(self):
-        """
-
-        Returns: dictionary of DataFrames of any reports to be given to the user
-            keys are the file name that the df will be saved with
-
+        """ 사용자에게 제공될 보고서의 데이터프레임을 딕셔너리로 변환하는 함수
         """
         df_dict = dict()
         df_dict['pro_forma'] = self.pro_forma
