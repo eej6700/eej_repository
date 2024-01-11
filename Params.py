@@ -557,18 +557,9 @@ class Params:
 
     @classmethod
     def checks_for_validate(cls, value, schema_key_attr, key_name, tag_name):
-        """ Helper function to validate method. This runs the checks to validate the value of input
-        data with its properties (the arguments) provided from Schema.json
-
-            Args:
-                value: the value of the specific key being looked at, as read in from the json
-                schema_key_attr (dict): schema key for the value being validated
-                key_name (str): the key in question
-                tag_name (str): the tag from which this key is organized in
-
-            Returns: error as a tuple of information (tag, key, what caused the error, the type of
-            error, what the error should be changed into) if no error, then return None
-
+        """ 입력값을 스키마에서 정의한 속성과 비교하여 유효성을 검사하는 함수
+        입력값의 타입, 허용된 값 범위, 허용된 값 등을 확인하고
+        문제가 있을 경우 'report_warning' 함수를 호출하여 경고 메시지를 출력합니다.
         """
 
         desired_type = schema_key_attr.get('type')
@@ -576,6 +567,7 @@ class Params:
         if type(value) == tuple:
             cls.report_warning('conversion', value=value[1], type=desired_type, key=key_name,
                                tag=tag_name)
+           
             return
 
         # check if the data belongs to a set of allowed values
@@ -617,16 +609,9 @@ class Params:
 
     @classmethod
     def report_warning(cls, warning_type, raise_input_error=True, **kwargs):
-        """ Print a warning to the user log. Warnings are reported, but do not result in exiting.
-
-        Args:
-            warning_type (str): the classification of the warning to be reported to the user
-            raise_input_error (bool): raise this warning as an error instead back to the user and
-                stop running the program
-            kwargs: elements about the warning that need to be reported to the user (like the tag
-                and key that caused the error
-
-        """
+         """ 경고 메시지를 출력하는 함수
+            다양한 경고 유형에 대해 메시지를 생성 및 출력
+            """
         if warning_type == "unknown tag":
             TellUser.warning(
                 f"INPUT: {kwargs['tag']} is not used in this program and will be ignored. " +
@@ -660,19 +645,8 @@ class Params:
 
     @classmethod
     def extract_data(cls, expression, data_type):
-        """
-            Function to extract out all the sensitivity or non-sensitivity values for each given
-            expression, due to their string format. And then to convert these data values to the
-            proper data types in prior to the return.
-
-            Args:
-                expression (str): the string of expression to be extracted
-                data_type (str): the string of dataType
-
-            Returns:
-                result (list): the list with each element as a sensitivity value type-casted for
-                analysis. in the case of non-sensitivity this list is only one element in size.
-
+        """ 문자열 형태의 표현식에서 민감도 또는 비민감도 값들을 추출하고 데이터 유형에 맞게
+        변환하여 리스트로 반환하는 함수수
         """
         result = []
         expression = expression.strip()
@@ -688,19 +662,8 @@ class Params:
 
     @staticmethod
     def parse_coupled(tag, id_str, unparsed_coupled_with):
-        """ Function to allow coupling across different types of Tags (Scenario, Finance, etc) by
-        improving text parsing. By filtering out the types (categories) and then mapping them to
-        the respective property result. Create a list that contains coupled_sets of properties
-        from different types or same type. Improve readability so that fetch_coupled can be done
-        appropriately.
-
-            Args:
-                tag (str): string representation of tag of csv (top level of the json)
-                id_str (str): the ID string for the tag
-                unparsed_coupled_with (str):
-
-            Returns: a set of tuples (Tag, key) that the KEY inputted is coupled with
-
+        """ 다른 종류의 태그 간 또는 동일한 태그 내에서 속성을 결합하기 위해 텍스트 피싱을 개선하는 함수
+        주어진 문자열에서 태그 및 속성을 추출하고 해당하는 튜플의 세트 반환
         """
         # list of strings of the `Tag:Key` or `Key` listed in 'Coupled'
         coupled_with = [x.strip() for x in unparsed_coupled_with.split(',')]
@@ -720,16 +683,7 @@ class Params:
 
     @classmethod
     def fetch_coupled(cls, coupled_properties, tag_key_id):
-        """ Function to determine and fetch in only the relevant and unique coupled sets
-            to the class coupled sensitivity variable. It determines the coupled properties
-            first and then it is compared to other existing coupled set to determine if there is
-            any subset or intersection. Append it to the class coupled sensitivity variable
-            under appropriate conditions.
-
-            Args:
-                coupled_properties (set): a set that contains coupled_sets of properties from
-                    different types or same type.
-                tag_key_id (tuple(str): tuple of the tag and key-ID (ID is optional)
+        """ 결합된 속성 집합 중에 관련이 있고 고유한 결합된 세트를 결정하고 클래스의 결합된 민감도 변수 추가
         """
         # check to make sure all tag-keys in coupled_properties are valid inputs in the SCHEMA_TREE
         for coup_tag, coup_key, id_str in coupled_properties:
@@ -758,12 +712,9 @@ class Params:
 
     @classmethod
     def bad_active_combo(cls, **kwargs):
-        """ Based on what the user has indicated as active (and what the user has not), predict
-        whether or not the simulation(s) will have trouble solving.
-
-        Returns (bool): True if there are errors found. False if there are no errors found in the
-        errors log.
-
+        """ 사용자가 활성화한 시나리오의 조합이 유효하지 않은 경우 에러 메시지를 출력하는 함수
+        예를 들어, 시나리오와 재무 태그가 모두 활성화되지 않았거나, 리소스 충분성과 수요 응답이
+        동시에 활성화된 경우 등을 확인함함
         """
         dervet = kwargs.get('dervet', False)
         other_ders_active = kwargs.get('other_ders', False)
@@ -808,13 +759,8 @@ class Params:
 
     @classmethod
     def read_referenced_data(cls):
-        """ This function makes a unique set of filename(s) based on grab_value_lst.
-        It applies for time series filename(s), monthly data filename(s), customer tariff
-        filename(s), and cycle life filename(s). For each set, the corresponding class dataset
-        variable (ts, md, ct, cl) is loaded with the data.
-
-        Preprocess monthly data files
-
+        """ 데이터 파일에서 필요한 정보를 읽어와서 클래스 변수에 저장하는 함수
+        시계열 파일, 월간 데이터 파일, 고객 요금 파일, 연간 데이터 파일, 사이클 라이프 파일 등을 읽어옴
         """
         ts_files = cls.grab_value_set('Scenario', 'time_series_filename')
         md_files = cls.grab_value_set('Scenario', 'monthly_data_filename')
@@ -842,15 +788,8 @@ class Params:
 
     @classmethod
     def grab_value_set(cls, tag, key):
-        """ Checks if the tag-key exists in cls.sensitivity, otherwise grabs the base case value
-        from cls.template
-
-        Args:
-            tag (str): tag
-            key (str): key that that value(s) represent
-
-        Returns: set of values
-
+        """ 특정 태그 및 키에 대한 값을 검색하고 반환하는 함수
+        클래스의 민감도 변수에 저장된 값을 세트로 반환
         """
         temp_lst_values = []
         try:
@@ -866,9 +805,8 @@ class Params:
 
     @classmethod
     def build_case_definitions(cls):
-        """ Method to create a dataframe that includes all the possible combinations of sensitivity
-        values with coupling filter.
-
+        """ 모든 민감도 경우의 조합을 결정하여 클래스의 민감도 변수에 저장하는 함수
+        'coupled' 필터를 적용, 서로 다른 길이의 조합 제거거
         """
         sense = cls.sensitivity["attributes"]
         if not len(sense):
@@ -915,16 +853,8 @@ class Params:
 
     @classmethod
     def equal_coupled_lengths(cls, coupled_set):
-        """ Check class sensitivity variable if there is any coupled set has unequal lengths of
-        coupling arrays
-
-            Args:
-                coupled_set (set): a coupled_set that contains Tag/KeyID tuple - Property name of
-                the sensitivity arrays being coupled
-
-            Returns:
-                True if all those arrays have the same length, the returned set has length of 1 to
-                contain unique value False if those arrays have different lengths
+        """ 결합된 민감도 변수의 배열이 모두 동일한 길이인지 확인하는 함수
+        모든 배열이 동일한 길이라면 True, 아니라면 False 반환환
         """
 
         prop_lens = set(map(len, [cls.sensitivity['attributes'][x] for x in coupled_set]))
@@ -940,15 +870,8 @@ class Params:
 
     @staticmethod
     def read_from_file(name, filename, ind_col=None):
-        """ Read data from csv or excel file.
-
-        Args:
-            name (str): name of data to read
-            filename (str): filename of file to read
-            ind_col (str or list): column(s) to use as dataframe index
-
-         Returns:
-                A pandas dataframe of file at FILENAME location
+        """ CSV 또는 엑셀 파일에서 데이터를 읽어오는 함수
+        파일의 경로 및 형식에 따라 적절한 함수를 선택, 데이터를 읽어옴옴
         """
 
         raw = pd.DataFrame()
@@ -994,10 +917,7 @@ class Params:
 
     @classmethod
     def case_builder(cls):
-        """
-            Function to create all the instances based on the possible combinations of sensitivity
-            values provided to update the variable instances of this Params class object
-
+        """ 민감도 변수에 따라 모든 경우의 조합을 생성하여 클래스의 'instances' 변수에 저장하는 함수수
         """
         dictionary = {}
         case = copy.deepcopy(cls.template)
@@ -1016,13 +936,8 @@ class Params:
         cls.instances = dictionary
 
     def modify_attribute(self, tup, value):
-        """ Function to modify the value of the sensitivity value based on the specific
-        instance/scenario
-
-            Args:
-                tup (tuple): the group of attributes
-                value (int/float): the new value to replace the former value
-
+        """ 특정 인스턴스 또는 시나리오에 대해 민감도 값을 수정하는 함수
+        속성의 튜플과 새로운 값을 인자로 받아 속성을 수정
         """
 
         attribute = getattr(self, tup[0])
@@ -1032,11 +947,8 @@ class Params:
 
     @classmethod
     def load_and_prepare(cls):
-        """ Flattens each tag that the Schema has defined to only have 1 allowed.
-
-        Returns a params class where the tag attributes that are not allowed to have more than one
-        set of key inputs are just dictionaries of their key inputs (while the rest remain
-        dictionaries of the sets of key inputs)
+        """ 모든 인스턴스에 대해 데이터 세트 및 민감도 변수를 로드하고 준비하는 함수
+        각각의 데이터 파일을 읽어와 변수에 할당, 민감도 변수의 조합을 결정하여 민감도 변수에 저장장
         """
         tag_tree = cls.schema_dct.get("tags")
         for case, slf in cls.instances.items():
@@ -1071,24 +983,16 @@ class Params:
 
     @staticmethod
     def flatten_tag_id(tag_id_dictionary):
-        """flatten attributes who should only have 1 subelement – save the value as the attribute
-            (there should only be one item in the TAG_ID_DICTIONARY)
-
-        Args:
-            tag_id_dictionary (dict): result of the read_and_validate method
-
-        Returns (Dict): value of TAG_ID_DICTIONARY
-
+        """ 입력으로 받은 'tag_id_dictionary' 에서 하나의 서브 엘리먼트만 포함되어 있는 경우 해당 값을 
+        속성으로 하는 딕셔너리를 반환하는 함수
         """
         if tag_id_dictionary is None or not len(tag_id_dictionary):
             return None
         return dict(*tag_id_dictionary.values())
 
     def load_data_sets(self):
-        """Assign time series data, cycle life data, and monthly data to Scenario dictionary based
-        on the dataset content type. Assign customer tariff data to Finance dictionary based on
-        the customer tariff filename. These successful assignments is recorded in the developer
-        log.
+        """ 시나리오 데이터 세트, 금융 데이터 세트 및 배터리 입력에 대한 복사본을 생성하여 관련 딕셔너리에 할당하는 함수
+        데이터 로딩이 성공하면 로그에 성공 메시지를 기록함함
         """
         scenario = self.Scenario
         finance = self.Finance
@@ -1105,18 +1009,14 @@ class Params:
         TellUser.info("Data sets are loaded successfully.")
 
     def set_copy_of_referenced_data(self, filename, tag_tree):
-        """ Grabs referenced data and adds it to the TAG_TREE dictionary with the key FILENAME
-            Args:
-                filename (str): name of the file to be added (FILENAME + "_filename")
-                tag_tree (dict): tag to save data in
-
+        """ 파일 이름 및 해당 딕셔너리에 대한 참조 데이터에서 복사본을 만들어 지정된 'tag_tree' 딕셔너리에 추가하는 함수
         """
         filepath = tag_tree[f"{filename}_filename"]
         tag_tree[filename] = copy.deepcopy(self.referenced_data[filename][filepath])
 
     def load_scenario(self):
-        """ Error checks, interprets user given data and prepares it for Scenario initialization.
-
+        """ 사용자가 제공한 데이터를 검증하고 시나리오 초기화를 위해 준비하는 함수
+        시간 시리즈 및 월간 데이터를 처리하고 시작 및 종료 연도, 빈도, 타임 스텝 등의 시나리오 매개변수 설정
         """
         scenario = self.Scenario
         raw_time_series = scenario["time_series"]
@@ -1173,15 +1073,7 @@ class Params:
 
     @staticmethod
     def stringify_delta_time(dt):
-        """ Based on the value of the input parameter dt, return the frequency that the pandas data time index
-        should take, along with the exact decimal floating point value
-
-        Args:
-            dt (float): user reported time-step of time series data frame
-
-        Returns: a string representation of the frequency of the time series index,
-                 and the exact floating point representation of dt
-
+        """ 입력 파라미터 'dt' 값을 기반으로 pandas 데이터 타임 인덱스의 빈도 및 정확한 부동 소수점 값 반환하는 함수
         """
         frequency = ''
         dt_exact = 0.0
@@ -1207,10 +1099,8 @@ class Params:
         return frequency, dt_exact
 
     def get_single_series(self, ts, column_name, nan_count, description=None, bypass_key_error=False, allow_nans=False):
-        # if the column name does not exist in the data, an error ensues
-        # if NaNs are found in the data, the nan_count is recorded and an error ensues
-        #   return None on any error
-        # description is an optional argument
+        # 주어진 시계열 데이터프레임에서 특정 열에 해당하는 시리즈 가져오는 함수
+        # NaN 값이나 열이 존재하지 않는 경우 에러를 처리하고 경고 출력력
         if description is None:
             description = f"'{column_name}'"
         single_ts = None
@@ -1236,26 +1126,15 @@ class Params:
         return single_ts
 
     def count_nans_time_series(self, time_series):
-        # report on the number of nans in each time series
-        # returns a dict with an integer value for each time series key (name)
+        # 각 시계열에서 NaN 값의 수 계산 및 딕셔너리 반환하는 함수
         nans_count = dict()
         for ts_key, ts_val in time_series.items():
             nans_count[ts_key] = ts_val.isnull().sum()
         return nans_count
 
     def process_time_series(self, time_series, freq, dt, opt_years):
-        """ Given a time series data frame, transforms index into time-step beginning and preforms
-        basic checks on the data with the scenario defined
-
-        Args:
-            time_series (DataFrame): raw time series data frame.
-            freq (str): frequency that the date time index should take
-            dt (exact floating point value)
-            opt_years
-
-        Returns: a DataFrame with the index beginning at hour 0, if an there is an error with the
-            raw data that needs to be addressed, then return None
-
+        """ 주어진 시계열 데이터프레임을 처리하고 인덱스를 시간 단계의 시작으로 변환하는 함수
+        예상된 데이터 길이와 실제 데이터 길이가 일치하지 않으면 에러 기록록
         """
         first_hour = time_series.index.hour[0]
         first_min = time_series.index.minute[0]
@@ -1299,37 +1178,20 @@ class Params:
 
     @classmethod
     def record_timeseries_data_error(cls, error_message):
-        """ logs an error message to the user and mark the class as un-able to run.
-
-        Args:
-            error_message (str): string error message
-
+        """ 시계열 데이터 처리 중 발생한 오류를 기록하고 클래스를 실행할 수 없도록 표시하는 함수
         """
         TellUser.error(error_message)
         cls.timeseries_data_error = True
 
     @classmethod
     def record_timeseries_missing_error(cls, error_message):
-        """ logs an error message to the user and mark the class as un-able to run.
-
-        Args:
-            error_message (str): string error message
-
+        """ 시계열 데이터 처리 중 발생한 오류를 기록하고 클래스를 실행할 수 없도록 표시하는 함수
         """
         TellUser.error(error_message)
         cls.timeseries_missing_error = True
 
     def process_monthly(self, monthly_data, opt_years):
-        """ processing monthly data.
-        Creates monthly Period index from year and month
-
-        Args:
-            monthly_data (DataFrame): Raw df
-            opt_years (list)
-
-        Returns:
-            monthly_data (DataFrame): edited df
-
+        """ 월간 데이터를 처리하고 월별 기간 인덱스를 만드는 함수
         """
         if not monthly_data.empty:
             monthly_data.index = pd.PeriodIndex(
@@ -1348,29 +1210,20 @@ class Params:
 
     @classmethod
     def record_monthly_error(cls, error_message):
-        """ logs an error message to the user and mark the class as un-able to run.
-
-        Args:
-            error_message (str): string error message
-
+        """ 월간 데이터 처리 중 발생한 오류 및 입력 오류를 기록하고 클래스를 실행할 수 없도록 표시하는 함수
         """
         TellUser.error(error_message)
         cls.monthly_error = True
 
     @classmethod
     def record_input_error(cls, error_message):
-        """ logs an error message to the user and mark the class as un-able to run.
-
-        Args:
-            error_message (str): string error message
-
+        """ 월간 데이터 처리 중 발생한 오류 및 입력 오류를 기록하고 클래스를 실행할 수 없도록 표시하는 함수
         """
         TellUser.error(error_message)
         cls.input_error_raised = True
 
     def load_finance(self):
-        """ Interprets user given data and prepares it for Finance.
-
+        """ 금융 및 기술 데이터를 처리하여 해당 딕셔너리에 할당하는 함수
         """
         # include data in financial class
         self.Finance.update({
@@ -1390,9 +1243,7 @@ class Params:
         TellUser.info("Successfully prepared the Finance")
 
     def load_technology(self, names_list=None):
-        """ Error checks, interprets DER user given data and prepares for
-        initialization.
-
+        """ 금융 및 기술 데이터를 처리하여 해당 딕셔너리에 할당하는 함수
         """
         scenario = self.Scenario
         time_series = scenario['time_series']
@@ -1500,16 +1351,8 @@ class Params:
 
     @staticmethod
     def monthly_to_timeseries(freq, column):
-        """ Converts data given monthly into timeseries.
-
-        Args:
-            freq (str): frequency that the date time index should take
-            column (DataFrame):  A column of monthly data given by the user,
-                indexed by month
-
-        Returns: A Series of timeseries data that is equivalent to the column
-            given
-
+        """ 월 단위로 주어진 데이터를 시계열 데이터로 변환하는 함수
+        주어진 열과 동등한 시계열 데이터의 Series를 반환함함
         """
         first_day = f"1/1/{column.index.year[0]}"
         last_day = f"1/1/{column.index.year[-1] + 1}"
@@ -1524,9 +1367,8 @@ class Params:
         return temp[column.columns[0]]
 
     def load_services(self):
-        """ Error checks, interprets Value Stream user given data and prepares
-        it for initialization.
-
+        """ 가치 스트림 사용자가 제공한 데이터를 오류 검사하고 초기화를 위해 준비하는 함수
+        각각의 가치 스트림에서 필요한 데이터를 time_series 및 monthly_data로부터 추출함함
         """
         scenario = self.Scenario  # dictionary of scenario inputs
         monthly_data = scenario['monthly_data']
@@ -1702,12 +1544,8 @@ class Params:
 
     @classmethod
     def req_all_non_negative(cls, array, name):
-        """ Records a timeseries error is the given array contains ANY negative values
-
-        Args:
-            array:
-            name:
-
+        """ 주어진 배열에 음수 값이 포함되어 있는 경우 timeseries 오류를 기록하는 함수
+        배열에 음수 값이 하나라도 있으면 timeseries_data_error 플래그를 True로 설정하고 오류 메시지 출력함
         """
         if np.any(array < 0):
             cls.timeseries_data_error = True
@@ -1717,12 +1555,8 @@ class Params:
 
     @classmethod
     def req_no_zero_crossings(cls, array, name):
-        """ Records a timeseries error if the given array contains positive AND negative values
-
-        Args:
-            array:
-            name
-
+        """ 주어진 배열이 양수와 음수 값을 모두 포함하고 있는 경우 timeseries 오류를 기록하는 함수
+        배열이 양수와 음수 값을 동시에 포함하면 timeseries_data_error 플래그를 True로 설정하고 오류 메시지 출력함
         """
         if np.any(array < 0) and np.any(array > 0):
             cls.timeseries_data_error = True
