@@ -38,18 +38,11 @@ from storagevet.ErrorHandling import *
 
 
 class POI:
-    """
-        This class holds the load data for the case described by the user defined model parameter. It will also
-        impose any constraints that should be opposed at the microgrid's POI.
-    """
+    # 에너지 시스템의 포인트 오브 인터커넥션을 나타내는 클래스
 
     def __init__(self, params, technology_inputs_map, technology_class_map):
-        """ Initialize POI object to initialize the DER technologies given by the user input parameters
-
-        Args:
-            params(Dict): dictionary of all the user input parameters including all technologies, value streams,
-                            finance, scenario, and poi
-            technology_inputs_map (Dict): dict of active technology prepared by Params
+        """ POI 객체를 초기화하하는 함수
+        사용자가 정의한 모델 매개변수 및 기술 입력을 사용하여 DER 객체들을 초기화하고 활성 DER 목록에 추가함
         """
         self.max_export = params['max_export']  # > 0
         self.max_import = params['max_import']  # < 0
@@ -72,13 +65,7 @@ class POI:
                     self.active_ders.append(der_object)
 
     def calculate_system_size(self):
-        """ Determines the maximum controllable power that the system can export, needs to import, and
-        energy that can be stored.
-
-        Returns: ((max power import),
-                    (max power export),
-                     (max energy allowed to be stored, min energy allowed to be stored))
-
+        """ 시스템이 추출할 수 있는 최대 전력, 수입할 수 있는 최대 전력, 저장할 수 있는 최대 에너지 및 최소 에너지를 계산함
         """
         min_ene = 0
         max_ene = 0
@@ -93,35 +80,14 @@ class POI:
         return max_ch, max_dis, (max_ene, min_ene)
 
     def initialize_optimization_variables(self, size):
-        """Function should be called at the beginning of each optimization loop. Initializes optimization variables
-
-        Args:
-            size (int): length of optimization variables_df to create
+        """ 최적화 루프의 시작에서 최적화 변수를 초기화하는 함수 
         """
         for der_instance in self.active_ders:
             # initialize variables
             der_instance.initialize_variables(size)
 
     def get_state_of_system(self, mask):
-        """ POI method to measure the state of POI depending on available types of DERs. used in SET_UP_OPTIMIZATION
-
-        Args:
-            mask (DataFrame): DataFrame of booleans used, the same length as time_series. The value is true if the
-                        corresponding column in time_series is included in the data to be optimized.
-
-        Returns:
-            aggregation of loads
-            aggregation of generation from variable resources
-            aggregation of generation from other sources
-            total net power from ESSs
-            net power from dispatchable DERs (not Intermittent Resources, and not Load)
-            total state of energy stored in the system
-            aggregation of all the power flows into the POI
-            aggregation of all the power flows out if the POI
-
-            aggregation of steam thermal heating power (heat recovered)
-            aggregation of hotwater thermal heating power (heat recovered)
-            aggregation of thermal cooling power (cold recovered)
+        """ POI의 상태를 측정하여 최적화에 사용될 파라미터를 계산하는 함수수
         """
         opt_var_size = sum(mask)
         load_sum = cvx.Parameter(value=np.zeros(opt_var_size), shape=opt_var_size, name='POI-Zero')  # at POI
@@ -176,10 +142,7 @@ class POI:
         return load_sum, var_gen_sum, gen_sum, tot_net_ess, der_dispatch_net_power, total_soe, agg_power_flows_in, agg_power_flows_out, agg_steam_heating_power, agg_hotwater_heating_power, agg_thermal_cooling_power
 
     def combined_discharge_rating_for_reliability(self):
-        """ Used to create the Reliability power constraint.
-
-        Returns: combined rating of ESS and ICE  in the system
-
+        """ 신뢰성 제약을 위한 복합 방전 등급을 계산하는 함수수
         """
         combined_rating = 0
         for der_instance in self.active_ders:
@@ -190,24 +153,7 @@ class POI:
         return combined_rating
 
     def optimization_problem(self, mask, power_in, power_out, steam_in, hotwater_in, cold_in, annuity_scalar=1):
-        """ Builds the master POI constraint list for the subset of time series data being optimized.
-            Due to VS power reservations, control constraints, import/export constraints, and energy throughput requirements
-
-        Args:
-            mask (DataFrame): A boolean array that is true for indices corresponding to time_series data included
-                in the subs data set
-            power_in (cvx.Expression):
-            power_out (cvx.Expression):
-            steam_in (cvx.Expression):
-            hotwater_in (cvx.Expression):
-            cold_in (cvx.Expression):
-            annuity_scalar (float): a scalar value to be multiplied by any yearly cost or benefit that helps capture
-                the cost/benefit over the entire project lifetime (only to be set iff sizing)
-
-        Returns:
-            A dictionary with the portion of the objective function that it affects, labeled by the expression's key.
-            A list of constraints being set by the POI: power reservations, control constraints requirements,
-                max import, max export, etc.
+        """ 최적화 문제를 생성하고 POI의 제약 조건 리스트를 반환하는 함수수
         """
         constraint_list = []
         opt_size = sum(mask)
@@ -263,8 +209,7 @@ class POI:
         return obj_expression, constraint_list
 
     def disable_max_export_poi_constraint(self):
-        # NOTE: active_load_dump only occurs in DER-VET
-        #   when active_load_dump is True, we return True to disable the max_export poi constraint
+        # 최대 수출 POI 제약을 비활성화하는지 여부를 반환하는 함수수
         try:
             disable_max_export = self.active_load_dump
             if disable_max_export:
@@ -274,23 +219,7 @@ class POI:
             return False
 
     def aggregate_p_schedules(self, mask):
-        """ POI method to add up the discharge power schedules from DERs. The 'power schedule'
-        defines how much of the technology's discharge capacity can be bid to increase the amount
-        of power being delivered (UP) or can be bid to decrease the amount of power being delivered
-        (DOWN) in the electrical grid that the POI is connected to.
-
-        DERVET's logic does not allow intermittent resources to participate in ancillary markets
-
-        Args:
-            mask (DataFrame): DataFrame of booleans used, the same length as time_series. The value is true if the
-                        corresponding column in time_series is included in the data to be optimized.
-
-        Returns:
-            total ability to pull power down from the grid by discharging less
-            total ability to push power up into the grid by discharging more
-            total ability to pull power down from the grid by charging more
-            total ability to push power up into the grid by charging less
-            total energy stored/delivered during sub-time-step activities
+        """ DER의 방전 및 충전 일정을 합산하여 전력 조정 서비스에 참여할 수 있는 능력을 계산하는 함수수
         """
         opt_size = sum(mask)
         agg_dis_up = cvx.Parameter(value=np.zeros(opt_size), shape=opt_size, name='POI-Zero')
@@ -314,11 +243,7 @@ class POI:
         return agg_dis_down, agg_dis_up, agg_ch_down, agg_ch_up, uenergy_decr, uenergy_incr, uenergy_thru
 
     def merge_reports(self, is_dispatch_opt, index):
-        """ Collects and merges the optimization results for all DERs into
-
-        Returns: A timeseries dataframe with user-friendly column headers that summarize the results
-            pertaining to this instance
-
+        """ DER들의 최적화 결과를 수집하고 병합하여 사용자 친화적인 결과를 나타내는 데이터프레임을 반환하는 함수수
         """
         results = pd.DataFrame(index=index)
         monthly_data = pd.DataFrame()
@@ -356,8 +281,7 @@ class POI:
         return results, monthly_data
 
     def technology_summary(self):
-        """Creates and returns a data frame with two columns: the tag and name of each DER
-
+        """ DER들의 종류 및 이름에 대한 데이터프레임을 생성하여 반환하는 함수
         """
         der_summary = {'Type': [], 'Name': []}
         for der_object in self.der_list:
@@ -368,14 +292,7 @@ class POI:
         return technology_summary
 
     def drill_down_dfs(self, **kwargs):
-        """
-
-        Args:
-            kwargs (): dictionary of dataframes that were created by COLLECT_RESULTS
-
-        Returns: list of tuples of DataFrames of any reports that are value stream specific
-            tuple[0] are the file name that the df will be saved with
-
+        """ 결과를 세부적으로 분석하기 위한 데이터프레임을 반환하는 함수
         """
         df_dict = dict()
         for der in self.der_list:
