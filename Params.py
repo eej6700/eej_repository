@@ -1,34 +1,4 @@
-"""
-Copyright (c) 2023, Electric Power Research Institute
-
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without modification,
- are permitted provided that the following conditions are met:
-
-     * Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-     * Redistributions in binary form must reproduce the above copyright notice,
-       this list of conditions and the following disclaimer in the documentation
-       and/or other materials provided with the distribution.
-     * Neither the name of DER-VET nor the names of its contributors
-       may be used to endorse or promote products derived from this software
-       without specific prior written permission.
-
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-"""
-"""
-Params.py
+""" Params.py
 DER-VET 프로젝트에서 사용되는 파라미터 관리 클래스인 Params를 정의함
 이 클래스는 JSON 또는 CSV 형식의 모델 파라미터 파일을 읽고 처리하여 DER-VET 모델에 필요한 파라미터 정보를 제공함
 다양한 메서드와 클래스 속성을 사용하여 파라미터를 초기화하고 검증하며 또한 민감도 분석 및 결합 설정을 처리함
