@@ -35,12 +35,11 @@ class Visualization:
 
     def __init__(self, params_class):
         self.params_class = params_class
+             # Params 클래스의 인스턴스를 나타내는 매개변수
+             # 시각화 클래스의 초기화에 사용됨
 
     def class_summary(self):
-        """
-            Function to summarize the Model_Parameters_Template for previsualization
-
-            Return: the summary table
+        """ Model_Parameters_Template을 요약하여 시각화하는 함수
         """
         input_tags = self.params_class.json_tree
         tree = self.params_class.xmlTree
@@ -84,14 +83,10 @@ class Visualization:
 
     @staticmethod
     def get_schema_type(schema_dict, component_name):
-        """ Looks in the schema XML for the type of the component. Used to print the class summary for previsualization.
-            Ex: storage-type, storage-technology, pre-dispatch, services, generator, finance, or scenario
-        Args:
-            schema_dict (dict): the schema
-            component_name (str): name of the attribute to be searched and determined for the type
-
-        Returns: the type of the attribute, if found. otherwise it returns "other"
-
+        """ 스키마 XML에서 구성 요소의 유형을 찾는 함수
+        클래스 요약을 인쇄하는데 사용되는 함수
+        schema_dict: 스키마 딕셔너리
+        component_name: 유형을 찾을 속성의 이름
         """
         tag_dicts = schema_dict.get("tags")
         for tag_name, tag_attrib in tag_dicts.items():
