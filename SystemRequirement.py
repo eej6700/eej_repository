@@ -48,14 +48,11 @@ class Requirement:
     """
 
     def __init__(self, constraint_type, limit_type, parent, constraint):
-        """Initialize the requirement and set its value
-
-        Args:
-            constraint_type (str): state of energy, charge, or discharge (not case sensitive)
-            limit_type (str): maximum limit or minimum (not case sensitive, but must be "max" or "min")
-            parent (str): Indicates what "service" or "technology" generated the constraint
-            constraint (float, Series): Constraint value; float if physical constraint, Series with Timestamp index if control or service constraint.
-
+        """ Requirement 객체를 초기화하고 해당 값(value)을 설정하는 함수
+        constraint_type: 에너지, 충전 또는 방전 상태 (대소문자 구분 없음)
+        limit_type: 최대 또는 최소 (대소문자 구분 없음, 'max' 또는 'min'이어야 함)
+        parent: 제약 조건을 생성한 "service" 또는 "technology"를 나타냄
+        constraint: 제약 조건 값; 물리적 제약 조건인 경우 float, 제어 또는 서비스 제약 조건인 경우 Timestamp 인덱스가 있는 Series
         """
         self.type = constraint_type.lower()
         self.limit_type = limit_type.lower()
@@ -70,14 +67,11 @@ class SystemRequirement:
     """
 
     def __init__(self, constraint_type, limit_type, years_of_analysis, datetime_freq):
-        """Initialize a constraint.
-
-        Args:
-            constraint_type (str): state of energy, charge, or discharge (not case sensitive)
-            limit_type (str): maximum limit or minimum (not case sensitive)
-            years_of_analysis (list): list of years that should be included in the returned Index
-            datetime_freq (str): the pandas frequency in string representation -- required to create dateTime rang
-
+        """ Constraint을 초기화하는 함수
+        constraint_type: 에너지, 충전 또는 방전 상태 (대소문자 구분 없음)
+        limit_type: 최대 또는 최소 (대소문자 구분 없음)
+        years_of_analysis: 반환된 인덱스에 포함되어야 하는 연도 목록
+        datetime_freq: Pandas 빈도를 나타내는 문자열 표현입니다. DateTime 범위를 만드는 데 필요
         """
         self.type = constraint_type.lower()
         self.is_max = limit_type.lower() == 'max'
@@ -102,13 +96,7 @@ class SystemRequirement:
             self.value = pd.Series(np.repeat(VERY_LARGE_NUMBER, size), index=index)
 
     def update(self, requirement):
-        """ Update constraint values for the times that were included in. Also update the list tracking which
-        value streams are contributing to which timesteps.
-
-        Args:
-
-            requirement (Requirement): the requirement that that VALUE must also be able to meet
-
+        """ 제약 조건 값을 업데이트하고 각 타임스탬프에 기여하는 ValueStream을 기록하는 함수수
         """
         parent = requirement.parent
         value = requirement.value
@@ -135,38 +123,19 @@ class SystemRequirement:
         self.owner[update_indx][mask] = parent
 
     def contributors(self, datetime_indx):
-        """
-        Gets the Parents of the constraint during specified times
-
-        Args:
-            datetime_indx (pd.Index): data time index for the timesteps to be considered
-
-        Returns: list of strings that represent the contributors of the constraint value(s) indicated by DATETIME_INDX
-
+        """ 지정된 시간 동안 제약 조건의 부모를 가져오는 함수
+        datetime_indx : 고려해야 하는 타임스탬프의 데이터 시간 인덱스
         """
         contributors = self.parents[self.parents['DateTime'].isin(datetime_indx.to_list())].Parent
         return contributors.unique()
 
     def get_subset(self, mask):
-        """
-
-        Args:
-            mask (DataFrame): DataFrame of booleans used, the same length as time_series. The value is true if the
-                corresponding column in time_series is included in the data to be optimized.
-
-        Returns: the value of this requirement at the times that correspond to the mask given
-
+        """ 주어진 mask에 해당하는 시간에 대한 이 요구 사항의 값을 가져오는 함수
         """
         return self.value.loc[mask].values
 
     def __le__(self, other):
-        """  x<=y calls x.__le__(y)
-
-        Args:
-            other (SystemRequirement, int):
-
-        Returns: bool
-
+        """ 비교 연산자 오버로딩 메서드로, 다른 SystemReqirement 객체 또는 정수와의 비교를 처리하는 함수
         """
         try:
             return self.value <= other.value
@@ -174,13 +143,7 @@ class SystemRequirement:
             return self.value <= other
 
     def __lt__(self, other):
-        """  x<y calls x.__lt__(y)
-
-        Args:
-            other (SystemRequirement, int):
-
-        Returns: bool
-
+        """ 비교 연산자 오버로딩 메서드로, 다른 SystemReqirement 객체 또는 정수와의 비교를 처리하는 함수
         """
         try:
             return self.value < other.value
@@ -188,13 +151,7 @@ class SystemRequirement:
             return self.value < other
 
     def __eq__(self, other):
-        """  x==y calls x.__eq__(y)
-
-        Args:
-            other (SystemRequirement, int):
-
-        Returns: bool
-
+        """ 비교 연산자 오버로딩 메서드로, 다른 SystemReqirement 객체 또는 정수와의 비교를 처리하는 함수
         """
         try:
             return self.value == other.value
@@ -202,13 +159,7 @@ class SystemRequirement:
             return self.value == other
 
     def __ne__(self, other):
-        """  x!=y calls x.__ne__(y)
-
-        Args:
-            other (SystemRequirement, int):
-
-        Returns: bool
-
+         """ 비교 연산자 오버로딩 메서드로, 다른 SystemReqirement 객체 또는 정수와의 비교를 처리하는 함수
         """
         try:
             return self.value != other.value
@@ -216,13 +167,7 @@ class SystemRequirement:
             return self.value != other
 
     def __gt__(self, other):
-        """  x>y calls x.__gt__(y)
-
-        Args:
-            other (SystemRequirement, int):
-
-        Returns: bool
-
+        """ 비교 연산자 오버로딩 메서드로, 다른 SystemReqirement 객체 또는 정수와의 비교를 처리하는 함수
         """
         try:
             return self.value > other.value
@@ -230,13 +175,7 @@ class SystemRequirement:
             return self.value > other
 
     def __ge__(self, other):
-        """  x>=y calls x.__ge__(y)
-
-        Args:
-            other (SystemRequirement, int):
-
-        Returns: bool
-
+        """ 비교 연산자 오버로딩 메서드로, 다른 SystemReqirement 객체 또는 정수와의 비교를 처리하는 함수
         """
         try:
             return self.value >= other.value
